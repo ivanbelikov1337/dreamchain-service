@@ -24,10 +24,16 @@ async function bootstrap() {
     .addTag('Donations', 'Donation endpoints')
     .addTag('Blockchain', 'Blockchain integration endpoints')
     .addServer('http://localhost:3001', 'Development Server')
-    .addServer(process.env.API_URL || 'http://localhost:3001', 'Production Server')
-    .build()
+    
+  if (process.env.RENDER_EXTERNAL_URL) {
+    config.addServer(process.env.RENDER_EXTERNAL_URL, 'Production Server')
+  } else if (process.env.API_URL) {
+    config.addServer(process.env.API_URL, 'Production Server')
+  }
+  
+  const configBuild = config.build()
 
-  const document = SwaggerModule.createDocument(app, config)
+  const document = SwaggerModule.createDocument(app, configBuild)
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
