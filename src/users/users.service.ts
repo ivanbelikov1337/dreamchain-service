@@ -7,8 +7,14 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
+    // Generate username if not provided
+    const username = createUserDto.username || `User-${createUserDto.walletAddress.slice(2, 8)}`;
+
     const user = await this.prisma.user.create({
-      data: createUserDto,
+      data: {
+        ...createUserDto,
+        username,
+      },
       include: {
         dreams: true,
         donations: {
