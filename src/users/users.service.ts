@@ -15,7 +15,17 @@ export class UsersService {
         ...createUserDto,
         username,
       },
-      include: {
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        avatar: true,
+        rating: true,
+        totalDonated: true,
+        totalReceived: true,
+        chances: true,
+        createdAt: true,
+        updatedAt: true,
         dreams: true,
         donations: {
           include: {
@@ -35,7 +45,17 @@ export class UsersService {
   async findById(id: number) {
     return this.prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        avatar: true,
+        rating: true,
+        totalDonated: true,
+        totalReceived: true,
+        chances: true,
+        createdAt: true,
+        updatedAt: true,
         dreams: true,
         donations: {
           include: {
@@ -52,7 +72,17 @@ export class UsersService {
   async findByWalletAddress(walletAddress: string) {
     return this.prisma.user.findUnique({
       where: { walletAddress },
-      include: {
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        avatar: true,
+        rating: true,
+        totalDonated: true,
+        totalReceived: true,
+        chances: true,
+        createdAt: true,
+        updatedAt: true,
         dreams: true,
         donations: {
           include: {
@@ -69,7 +99,17 @@ export class UsersService {
   async findAll() {
     return this.prisma.user.findMany({
       orderBy: { totalDonated: 'desc' },
-      include: {
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        avatar: true,
+        rating: true,
+        totalDonated: true,
+        totalReceived: true,
+        chances: true,
+        createdAt: true,
+        updatedAt: true,
         dreams: {
           select: { id: true },
         },
@@ -115,7 +155,17 @@ export class UsersService {
         totalDonated,
         totalReceived,
       },
-      include: {
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        avatar: true,
+        rating: true,
+        totalDonated: true,
+        totalReceived: true,
+        chances: true,
+        createdAt: true,
+        updatedAt: true,
         dreams: true,
         donations: {
           include: {
@@ -181,7 +231,17 @@ export class UsersService {
     return this.prisma.user.update({
       where: { walletAddress },
       data: { username },
-      include: {
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        avatar: true,
+        rating: true,
+        totalDonated: true,
+        totalReceived: true,
+        chances: true,
+        createdAt: true,
+        updatedAt: true,
         dreams: true,
         donations: {
           include: {
