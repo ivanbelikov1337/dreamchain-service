@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { CreateDreamDto } from './dto/create-dream.dto';
@@ -11,6 +11,22 @@ export class DreamsService {
   ) {}
 
   async create(createDreamDto: CreateDreamDto) {
+    // Check if user has chances to create a dream
+    const user = await this.prisma.user.findUnique({
+      where: { id: createDreamDto.userId },
+    });
+
+    if (!user) {
+      throw new ForbiddenException('User not found');
+    }
+
+    if (user.chances <= 0) {
+      throw new ForbiddenException(
+        'You need to donate at least 1 USDC to someone to create a dream',
+      );
+    }
+
+    // Create dream
     const dream = await this.prisma.dream.create({
       data: createDreamDto,
       include: {
@@ -18,6 +34,17 @@ export class DreamsService {
         donations: true,
       },
     });
+
+    // Deduct one chance from user
+    await this.prisma.user.update({
+      where: { id: createDreamDto.userId },
+      data: {
+        chances: {
+          decrement: 1,
+        },
+      },
+    });
+    console.log(`✅ Dream created and 1 chance deducted from user #${user.id}`);
 
     // Update creator's rating
     if (dream.userId) {

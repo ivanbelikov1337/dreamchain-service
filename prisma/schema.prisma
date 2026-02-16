@@ -17,6 +17,7 @@ model User {
   rating    Int     @default(0)
   totalDonated Float @default(0)
   totalReceived Float @default(0)
+  chances   Int     @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

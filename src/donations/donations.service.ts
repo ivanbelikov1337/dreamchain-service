@@ -29,6 +29,52 @@ export class DonationsService {
     return 5; // Maximum 5 stars
   }
 
+  /**
+   * Calculate dream creation chances based on cumulative donation amount
+   * Only 1 chance per donation if a new threshold is reached
+   * Thresholds:
+   * - 1 USDC total: unlock 1 chance
+   * - 5 USDC total: unlock 1 chance
+   * - 15, 30, 45, 60, 75... USDC total: unlock 1 chance each
+   * 
+   * Returns max 1 chance per donation if any threshold crossed, 0 otherwise
+   */
+  private calculateChancesGain(
+    newDonationAmount: number,
+    previousTotalDonated: number,
+  ): number {
+    const newTotalDonated = previousTotalDonated + newDonationAmount;
+
+    // Check if any threshold was crossed
+    const thresholdsCrossed: boolean[] = [];
+
+    // Threshold 1: 1 USDC
+    if (previousTotalDonated < 1 && newTotalDonated >= 1) {
+      thresholdsCrossed.push(true);
+    }
+
+    // Threshold 2: 5 USDC
+    if (previousTotalDonated < 5 && newTotalDonated >= 5) {
+      thresholdsCrossed.push(true);
+    }
+
+    // Thresholds 3+: Every 15 USDC starting from 15
+    if (newTotalDonated >= 15) {
+      const previousThreshold =
+        previousTotalDonated >= 15
+          ? Math.floor(previousTotalDonated / 15) * 15
+          : 0;
+      const newThreshold = Math.floor(newTotalDonated / 15) * 15;
+
+      if (newThreshold > previousThreshold) {
+        thresholdsCrossed.push(true);
+      }
+    }
+
+    // Only 1 chance per donation if any threshold crossed
+    return thresholdsCrossed.length > 0 ? 1 : 0;
+  }
+
   async create(createDonationDto: CreateDonationDto) {
     return this.prisma.donation.create({
       data: createDonationDto,
@@ -104,12 +150,16 @@ export class DonationsService {
       where: { walletAddress: donor },
     });
 
+    // Save previous totalDonated before it changes
+    const previousTotalDonated = donorUser?.totalDonated || 0;
+
     if (!donorUser) {
       console.log(`   Creating new donor user...`);
       donorUser = await this.prisma.user.create({
         data: {
           walletAddress: donor,
           rating: 0,
+          chances: 0, // Will be incremented below
         },
       });
       console.log(`   ✅ Donor created: ID=${donorUser.id}`);
@@ -135,6 +185,13 @@ export class DonationsService {
     });
     console.log(`✅ Donation created: ID=${donation.id}`);
 
+    // Calculate chances gain based on cumulative donation thresholds
+    const chancesGain = this.calculateChancesGain(amountNum, previousTotalDonated);
+    const newTotalDonated = previousTotalDonated + amountNum;
+    console.log(
+      `🎲 Chances calculation: Previous total=${previousTotalDonated} USDC, New donation=${amountNum} USDC, New total=${newTotalDonated} USDC, Gain=${chancesGain}`,
+    );
+
     // Update dream totalDonations
     console.log(`📊 Updating dream statistics...`);
     const ratingIncrement = this.calculateRatingFromAmount(amountNum);
@@ -158,8 +215,12 @@ export class DonationsService {
         totalDonated: {
           increment: amountNum,
         },
+        chances: {
+          increment: chancesGain,
+        },
       },
     });
+    console.log(`💰 Updated donor: totalDonated +${amountNum}, chances +${chancesGain}`);
 
     // Update donor's rating
     await this.usersService.updateRating(donorUser.id);
